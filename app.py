@@ -1,7 +1,9 @@
+from winreg import QueryInfoKey
 from flask import Flask, request, redirect, url_for
 # from db import DatabaseHandler
 import json
-import bs4
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -18,13 +20,29 @@ def root():
 def createResponse():
     query = request.args.get("query")
     print("query = ", query)
-    createAPIRequest(query)
+    try:
+        res = requests.get(createAPIRequest(query))
+    except Exception as e:
+        print(e)
+        return "Server Error" # change error handling
+    soup = BeautifulSoup(res.text, "xml")
+    # print(soup.prettify())
+    entries = soup.find_all("entry")
+    print(entries)
 
     # return redirect(url_for("redirect", query = query))
-    return json.dumps({})
+    return res.text
 
 
-def createAPIRequest(query: str, numresult = 10: int, ):
+def createAPIRequest(query: str, start: int = 0, numresult: int = 10) -> str:
+    api_base = "http://export.arxiv.org/api/"
+    method_name = "query"
+    parameters = "search_query="
+    api = api_base + method_name + "?" + parameters + query
+    return api
+    
+
+
 
 
 
