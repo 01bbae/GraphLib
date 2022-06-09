@@ -2,11 +2,9 @@ import express from 'express';
 import tf = require('@tensorflow/tfjs');
 import use = require('@tensorflow-models/universal-sentence-encoder');
 import '@tensorflow/tfjs-node';
-// const data = require('../../dataset/arxiv-metadata-oai-snapshot');
+// const data = require('../../dataset/arxiv-metadata-oai-snapshot'); too big for importing
 import fs = require('fs');
 import { parentPort } from 'worker_threads';
-// import readline = require('readline');
-// import stream = require('stream');
 require('stream-json');
 const {parser} = require('stream-json/Parser');
 
@@ -53,21 +51,28 @@ app.get('/query', (req, res) => {
         authors_parsed: Array<Array<string>>
     }
 
+    const model = use.load()
+
     // not sure what type this is
     const pipeline: any = fs.createReadStream('../../dataset/arxiv-metadata-oai-snapshot').pipe(parser());
     pipeline.on('data', (data: any)  => { //replace with type Paper for later
-        data.
+        const text: Array<string> = [data.abstract, query]
+        model.then((usemodel: use.UniversalSentenceEncoder) =>{
+            usemodel.embed(text).then((embeddings: tf.Tensor2D)=> {
+                const abstractScore: number[] = embeddings.array().then((tensor: number[][]) => {
+                    return tensor[0];
+                });
+                const queryScore: number[] = embeddings.array().then((tensor: number[][]) => {
+                    return tensor[1];
+                });
+                const similarityScore = tf.dot(abstractScore, queryScore).div(tf.dot(abstractScore, abstractScore).mul(tf.dot(queryScore, queryScore)))
+                res.send(embeddings);
+            });
+        });
     });
     pipeline.on('end', () => console.log("went through all objects"));
 
 
-    use.load().then((model: use.UniversalSentenceEncoder) =>{
-        const text: Array<string> = [query, "bot"]
-        model.embed(text).then((embeddings: tf.Tensor2D)=> {
-            embeddings.print();
-            res.send(embeddings);
-        });
-    });
     
 
     
