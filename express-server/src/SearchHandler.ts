@@ -15,62 +15,57 @@ export class PaperScore {
     
 }
 
-export async function databaseSearch(query: string) {
+export async function databaseSearch(query: string): Promise<Array<PaperScore>> {
     const model: use.UniversalSentenceEncoder = await use.load();
+    const relevantPapers: Array<PaperScore> = [];
+
+    
 
     // FIXME: figure out what type this is
     const pipeline: any = fs.createReadStream("../../dataset/arxiv-metadata-oai-snapshot").pipe(parser());
-    const data: Paper = await pipeline.on("data", async (data: Paper) => {
+    pipeline.on("data", async (data: Paper) => {
         const text: Array<string> = [data.abstract, query];
         const embedding: tf.Tensor2D = await model.embed(text);
         const tensor: number[][] = await embedding.array()
         const abstractEmbedding: Array<number> = tensor[0];
         const queryEmbedding: Array<number> = tensor[1];
         
-        const listOfPapers: Array<PaperScore> = []
         const maxLength = 10
 
         const cosineSimilarity: number = calculateCosineSimilarity(abstractEmbedding, queryEmbedding);
         const currentPaper:PaperScore = new PaperScore(data, cosineSimilarity);
-        // if (listOfPapers.length > maxLength){
-        //     let lowestScore = listOfPapers[maxLength-1].score;
-        //     let highestScore = listOfPapers[0].score;
-        //     if (cosineSimilarity > highestScore){
-        //         listOfPapers.unshift(currentPaper)
-        //     }else if (cosineSimilarity < highestScore && cosineSimilarity > lowestScore){
-        //         // find index in between using binary search
-        //         let low: number = 0;
-        //         let high: number = maxLength - 1;
-        //         let mid: number = 0;
-        //         while (low <= high){
-        //             mid = Math.floor((low + high) / 2);
-        //             if (listOfPapers[mid].score < currentPaper.score){
-        //                 low = mid + 1;
-        //             }else if (listOfPapers[mid].score > currentPaper.score){
-        //                 high = mid - 1;
-        //             }
-        //         }
-        //         if (listOfPapers[mid].score > currentPaper.score){
-        //             listOfPapers.pop()
-        //             const tmp = listOfPapers.splice(mid, 0, currentPaper)
-        //             listOfPapers.
-        //         }else{
-        //             // TODO: replace with logic
-        //             continue;
 
-        //         }
-                
-        //     }
-        // }else{
-        //     listOfPapers.push(new PaperScore(data, cosineSimilarity))
-        // }
+        let lowestScore:number = relevantPapers[relevantPapers.length-1].score;
+        let highestScore:number = relevantPapers[0].score;
+
+        if (highestScore < currentPaper.score){
+            relevantPapers.unshift(currentPaper);
+            relevantPapers.pop();
+        }else if (highestScore > currentPaper.score && lowestScore < currentPaper.score){
+            // find the first paper in array with lower score than current paper and insert
+            // FIXME: make sure that maxLength is used to cap length
+            for (let i = 0; i < relevantPapers.length; i++){
+                if (currentPaper.score > relevantPapers[i].score){
+                    relevantPapers.splice(i,0,currentPaper);
+                    relevantPapers.pop()
+                }
+            }
+        }
 
 
 
 
     });
 
-  pipeline.on("end", () => console.log("went through all objects"));
+    await pipeline.on("end", () => {
+        console.log("went through all objects")
+        return relevantPapers;
+    });
+
+
+    
+    // FIXME: returning relevantPapers only when data is finished?
+    return relevantPapers;
 
 }
 

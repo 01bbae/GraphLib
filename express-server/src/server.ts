@@ -1,5 +1,5 @@
 import express = require('express');
-import { databaseSearch } from './SearchHandler';
+import { databaseSearch, PaperScore } from './SearchHandler';
 import { Paper } from './SearchHandler';
 
 
@@ -23,7 +23,7 @@ app.get('/query', async (req, res) => {
         throw new Error("Query is not a string");
     }
     const query: string = req.query["query"];
-    const listOfPapers: /*Array<Paper>*/ any = await databaseSearch(query);
+    const listOfPapers: Array<PaperScore> = await databaseSearch(query);
 
 
     
