@@ -36,14 +36,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.databaseSearch = void 0;
+exports.databaseSearch = exports.PaperScore = void 0;
 var tf = require("@tensorflow/tfjs");
 var use = require("@tensorflow-models/universal-sentence-encoder");
-require("@tensorflow/tfjs-node");
-// const data = require('../../dataset/arxiv-metadata-oai-snapshot'); too big for importing
+var tfnode = require('@tensorflow/tfjs-node');
 var fs = require("fs");
 require("stream-json");
 var parser = require("stream-json/Parser").parser;
+var PaperScore = /** @class */ (function () {
+    function PaperScore(data, score) {
+        this.data = data;
+        this.score = score;
+    }
+    return PaperScore;
+}());
+exports.PaperScore = PaperScore;
 function databaseSearch(query) {
     return __awaiter(this, void 0, void 0, function () {
         var model, pipeline, data;
@@ -55,7 +62,7 @@ function databaseSearch(query) {
                     model = _a.sent();
                     pipeline = fs.createReadStream("../../dataset/arxiv-metadata-oai-snapshot").pipe(parser());
                     return [4 /*yield*/, pipeline.on("data", function (data) { return __awaiter(_this, void 0, void 0, function () {
-                            var text, embedding, tensor, abstractEmbedding, queryEmbedding, dotProd, lenAbstractEmbedding, lenQueryEmbedding, similarityScore;
+                            var text, embedding, tensor, abstractEmbedding, queryEmbedding, listOfPapers, maxLength, cosineSimilarity, currentPaper;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -68,10 +75,10 @@ function databaseSearch(query) {
                                         tensor = _a.sent();
                                         abstractEmbedding = tensor[0];
                                         queryEmbedding = tensor[1];
-                                        dotProd = tf.dot(abstractEmbedding, queryEmbedding);
-                                        lenAbstractEmbedding = tf.dot(abstractEmbedding, abstractEmbedding);
-                                        lenQueryEmbedding = tf.dot(queryEmbedding, queryEmbedding);
-                                        similarityScore = tf.div(dotProd, tf.mul(lenAbstractEmbedding, lenQueryEmbedding));
+                                        listOfPapers = [];
+                                        maxLength = 10;
+                                        cosineSimilarity = calculateCosineSimilarity(abstractEmbedding, queryEmbedding);
+                                        currentPaper = new PaperScore(data, cosineSimilarity);
                                         return [2 /*return*/];
                                 }
                             });
@@ -85,3 +92,11 @@ function databaseSearch(query) {
     });
 }
 exports.databaseSearch = databaseSearch;
+function calculateCosineSimilarity(abstractEmbedding, queryEmbedding) {
+    var dotProd = tf.dot(abstractEmbedding, queryEmbedding);
+    var lenAbstractEmbedding = tf.dot(abstractEmbedding, abstractEmbedding);
+    var lenQueryEmbedding = tf.dot(queryEmbedding, queryEmbedding);
+    var similarityScore = tf.div(dotProd, tf.mul(lenAbstractEmbedding, lenQueryEmbedding));
+    console.log(similarityScore);
+    return similarityScore.arraySync(); // should this be type number ?
+}

@@ -1,13 +1,13 @@
 import tf = require("@tensorflow/tfjs");
 import use = require("@tensorflow-models/universal-sentence-encoder");
-import "@tensorflow/tfjs-node";
+const tfnode = require('@tensorflow/tfjs-node');
 import fs = require("fs");
 require("stream-json");
 const { parser } = require("stream-json/Parser");
 
 export class PaperScore {
     data: Paper;
-    score: number;
+    score: number; 
     constructor(data: Paper, score: number){
         this.data = data;
         this.score = score;
@@ -32,36 +32,38 @@ export async function databaseSearch(query: string) {
 
         const cosineSimilarity: number = calculateCosineSimilarity(abstractEmbedding, queryEmbedding);
         const currentPaper:PaperScore = new PaperScore(data, cosineSimilarity);
-        if (listOfPapers.length > maxLength){
-            let lowestScore = listOfPapers[maxLength-1].score;
-            let highestScore = listOfPapers[0].score;
-            if (cosineSimilarity > highestScore){
-                listOfPapers.unshift(currentPaper)
-            }else if (cosineSimilarity < highestScore && cosineSimilarity > lowestScore){
-                // find index in between using binary search
-                let low: number = 0;
-                let high: number = maxLength - 1;
-                let mid: number = 0;
-                while (low <= high){
-                    mid = Math.floor((low + high) / 2);
-                    if (listOfPapers[mid].score < currentPaper.score){
-                        low = mid + 1;
-                    }else if (listOfPapers[mid].score > currentPaper.score){
-                        high = mid - 1;
-                    }
-                }
-                if (listOfPapers[mid].score > currentPaper.score){
-                    listOfPapers.pop()
-                    const tmp = listOfPapers.splice(mid, 0, currentPaper)
-                    listOfPapers.
-                }else{
+        // if (listOfPapers.length > maxLength){
+        //     let lowestScore = listOfPapers[maxLength-1].score;
+        //     let highestScore = listOfPapers[0].score;
+        //     if (cosineSimilarity > highestScore){
+        //         listOfPapers.unshift(currentPaper)
+        //     }else if (cosineSimilarity < highestScore && cosineSimilarity > lowestScore){
+        //         // find index in between using binary search
+        //         let low: number = 0;
+        //         let high: number = maxLength - 1;
+        //         let mid: number = 0;
+        //         while (low <= high){
+        //             mid = Math.floor((low + high) / 2);
+        //             if (listOfPapers[mid].score < currentPaper.score){
+        //                 low = mid + 1;
+        //             }else if (listOfPapers[mid].score > currentPaper.score){
+        //                 high = mid - 1;
+        //             }
+        //         }
+        //         if (listOfPapers[mid].score > currentPaper.score){
+        //             listOfPapers.pop()
+        //             const tmp = listOfPapers.splice(mid, 0, currentPaper)
+        //             listOfPapers.
+        //         }else{
+        //             // TODO: replace with logic
+        //             continue;
 
-                }
+        //         }
                 
-            }
-        }else{
-            listOfPapers.push(new PaperScore(data, cosineSimilarity))
-        }
+        //     }
+        // }else{
+        //     listOfPapers.push(new PaperScore(data, cosineSimilarity))
+        // }
 
 
 
@@ -72,12 +74,13 @@ export async function databaseSearch(query: string) {
 
 }
 
-function calculateCosineSimilarity(abstractEmbedding: tf.Tensor | Array<number>, queryEmbedding: tf.Tensor | Array<number>): number{
+function calculateCosineSimilarity(abstractEmbedding: tf.Tensor1D | Array<number>, queryEmbedding: tf.Tensor1D | Array<number>): number{
     const dotProd: tf.Tensor = tf.dot(abstractEmbedding, queryEmbedding);
     const lenAbstractEmbedding: tf.Tensor = tf.dot(abstractEmbedding, abstractEmbedding);
     const lenQueryEmbedding: tf.Tensor = tf.dot(queryEmbedding, queryEmbedding);
     const similarityScore: tf.Tensor = tf.div(dotProd, tf.mul(lenAbstractEmbedding,lenQueryEmbedding));
-    return similarityScore
+    console.log(similarityScore)
+    return similarityScore.arraySync() as number; 
 }
 
 // declaring type

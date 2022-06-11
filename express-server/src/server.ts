@@ -27,4 +27,4 @@ app.get('/query', async (req, res) => {
 
 
     
-})
+});
