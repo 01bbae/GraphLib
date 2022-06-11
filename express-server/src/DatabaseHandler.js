@@ -1,9 +1,9 @@
-"use strict";
-class DatabaseHandler {
-    constructor() {
+var DatabaseHandler = /** @class */ (function () {
+    function DatabaseHandler() {
     }
-    create_papers_node() {
-    }
-    create_authors_node() {
-    }
-}
+    DatabaseHandler.prototype.create_papers_node = function () {
+    };
+    DatabaseHandler.prototype.create_authors_node = function () {
+    };
+    return DatabaseHandler;
+}());
