@@ -23,7 +23,9 @@ app.get('/query', async (req, res) => {
         throw new Error("Query is not a string");
     }
     const query: string = req.query["query"];
-    const listOfPapers: Array<PaperScore> = await databaseSearch(query);
+    const database = "../../dataset/arxiv-metadata-oai-snapshot";
+    const listOfPapers: Array<PaperScore> = await databaseSearch(query, database);
+    
 
 
     

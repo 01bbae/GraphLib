@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSearchParams, useLocation } from 'react-router-dom';
 // import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
 
@@ -14,6 +14,15 @@ const Query = (props) => {
     // fetchData();
     // console.log(useLocation().pathname);
     // console.log(useLocation().search);
+    const [mode, setMode] = useState("");
+    useEffect((first) => {
+      
+    
+      return () => {
+        second
+      }
+    }, [mode])
+    
 
     fetch(useLocation().pathname+useLocation().search)
     .then(
@@ -31,9 +40,23 @@ const Query = (props) => {
     )
 
 
+    // connected by citations
+        // more cited papers are larger
+
+    // connected by authors
+
+    // connected by subject
+
+
 
   return (
-    <div>Query</div>
+    <div>
+        Query
+        <select>
+            <option value="Author">By Author</option>
+            <option value="Citations">By Citations</option>
+        </select>
+    </div>
   )
 }
 

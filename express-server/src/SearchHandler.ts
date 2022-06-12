@@ -1,9 +1,10 @@
 import tf = require("@tensorflow/tfjs");
 import use = require("@tensorflow-models/universal-sentence-encoder");
-const tfnode = require('@tensorflow/tfjs-node');
 import fs = require("fs");
 require("stream-json");
+require('@tensorflow/tfjs-node');
 const { parser } = require("stream-json/Parser");
+const { pipeline } = require('node:stream');
 
 export class PaperScore {
     data: Paper;
@@ -15,59 +16,51 @@ export class PaperScore {
     
 }
 
-export async function databaseSearch(query: string): Promise<Array<PaperScore>> {
+export async function databaseSearch(query: string, database: string): Promise<Array<PaperScore>>/*Promise<Array<PaperScore>>*/ {
     const model: use.UniversalSentenceEncoder = await use.load();
     const relevantPapers: Array<PaperScore> = [];
+    const maxLength = 10;
 
     
 
     // FIXME: figure out what type this is
-    const pipeline: any = fs.createReadStream("../../dataset/arxiv-metadata-oai-snapshot").pipe(parser());
-    pipeline.on("data", async (data: Paper) => {
-        const text: Array<string> = [data.abstract, query];
-        const embedding: tf.Tensor2D = await model.embed(text);
-        const tensor: number[][] = await embedding.array()
-        const abstractEmbedding: Array<number> = tensor[0];
-        const queryEmbedding: Array<number> = tensor[1];
-        
-        const maxLength = 10
+    await pipeline(
+        fs.createReadStream(database),
+        parser(), 
+        async (data: Paper) => {
+            const text: Array<string> = [data.abstract, query];
+            const embedding: tf.Tensor2D = await model.embed(text);
+            const tensor: number[][] = await embedding.array()
+            const abstractEmbedding: Array<number> = tensor[0];
+            const queryEmbedding: Array<number> = tensor[1];
+            
 
-        const cosineSimilarity: number = calculateCosineSimilarity(abstractEmbedding, queryEmbedding);
-        const currentPaper:PaperScore = new PaperScore(data, cosineSimilarity);
+            const cosineSimilarity: number = calculateCosineSimilarity(abstractEmbedding, queryEmbedding);
+            const currentPaper:PaperScore = new PaperScore(data, cosineSimilarity);
 
-        let lowestScore:number = relevantPapers[relevantPapers.length-1].score;
-        let highestScore:number = relevantPapers[0].score;
+            let lowestScore: number = relevantPapers[relevantPapers.length-1].score;
+            let highestScore: number = relevantPapers[0].score;
 
-        if (highestScore < currentPaper.score){
-            relevantPapers.unshift(currentPaper);
-            relevantPapers.pop();
-        }else if (highestScore > currentPaper.score && lowestScore < currentPaper.score){
-            // find the first paper in array with lower score than current paper and insert
-            // FIXME: make sure that maxLength is used to cap length
-            for (let i = 0; i < relevantPapers.length; i++){
-                if (currentPaper.score > relevantPapers[i].score){
-                    relevantPapers.splice(i,0,currentPaper);
-                    relevantPapers.pop()
+            if (highestScore < currentPaper.score){
+                relevantPapers.unshift(currentPaper);
+                relevantPapers.pop();
+            }else if (highestScore > currentPaper.score && lowestScore < currentPaper.score){
+                // find the first paper in array with lower score than current paper and insert
+                for (let i = 0; i < relevantPapers.length; i++){
+                    if (currentPaper.score > relevantPapers[i].score){
+                        relevantPapers.splice(i,0,currentPaper);
+                        if (relevantPapers.length > maxLength){
+                            relevantPapers.pop();
+                        }
+                        break;
+                    }
                 }
             }
         }
-
-
-
-
-    });
-
-    await pipeline.on("end", () => {
-        console.log("went through all objects")
-        return relevantPapers;
-    });
-
-
-    
-    // FIXME: returning relevantPapers only when data is finished?
+    );
     return relevantPapers;
-
 }
+
 
 function calculateCosineSimilarity(abstractEmbedding: tf.Tensor1D | Array<number>, queryEmbedding: tf.Tensor1D | Array<number>): number{
     const dotProd: tf.Tensor = tf.dot(abstractEmbedding, queryEmbedding);
