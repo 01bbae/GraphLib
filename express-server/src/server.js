@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
-const SearchHandler_1 = require("./SearchHandler");
 const app = express();
 const port = 5000;
 app.listen(port, () => {
@@ -27,5 +26,11 @@ app.get('/query', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const query = req.query["query"];
     const database = "../../dataset/arxiv-metadata-oai-snapshot";
-    const listOfPapers = yield (0, SearchHandler_1.databaseSearch)(query, database);
+    try {
+        // const listOfPapers: any/*Array<PaperScore>*/ = await databaseSearch(query, database);
+    }
+    catch (e) {
+        console.log("This is the error");
+        console.error(e);
+    }
 }));

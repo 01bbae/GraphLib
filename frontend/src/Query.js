@@ -15,11 +15,11 @@ const Query = (props) => {
     // console.log(useLocation().pathname);
     // console.log(useLocation().search);
     const [mode, setMode] = useState("");
-    useEffect((first) => {
+    useEffect((/*first*/) => {
       
     
       return () => {
-        second
+        // second
       }
     }, [mode])
     

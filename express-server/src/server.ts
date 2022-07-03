@@ -1,6 +1,6 @@
 import express = require('express');
-import { databaseSearch, PaperScore } from './SearchHandler';
-import { Paper } from './SearchHandler';
+import { PaperScore } from './SearchHandler';
+import { Paper } from './Paper';
 
 
 const app = express();
@@ -24,7 +24,12 @@ app.get('/query', async (req, res) => {
     }
     const query: string = req.query["query"];
     const database = "../../dataset/arxiv-metadata-oai-snapshot";
-    const listOfPapers: Array<PaperScore> = await databaseSearch(query, database);
+    try{
+        // const listOfPapers: any/*Array<PaperScore>*/ = await databaseSearch(query, database);
+    }catch(e){
+        console.log("This is the error");
+        console.error(e);
+    }
     
 
 

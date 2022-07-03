@@ -1,3 +1,4 @@
 dataset
-secrets.json
+DatabaseHandler/src/secrets.json
 express-server/node_modules
+DatabaseHandler/node_modules
